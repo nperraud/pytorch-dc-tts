@@ -9,56 +9,56 @@ import numpy as np
 from tqdm import tqdm
 from scipy import signal
 from hparams import HParams as hp
+import ltfatpy
+
+# def spectrogram2wav(mag):
+#     '''# Generate wave file from linear magnitude spectrogram
+#     Args:
+#       mag: A numpy array of (T, 1+n_fft//2)
+#     Returns:
+#       wav: A 1-D numpy array.
+#     '''
+#     # transpose
+#     mag = mag.T
+
+#     # de-noramlize
+#     mag = (np.clip(mag, 0, 1) * hp.max_db) - hp.max_db + hp.ref_db
+
+#     # to amplitude
+#     mag = np.power(10.0, mag * 0.05)
+
+#     # wav reconstruction
+#     wav = griffin_lim(mag ** hp.power)
+
+#     # de-preemphasis
+#     wav = signal.lfilter([1], [1, -hp.preemphasis], wav)
+
+#     # trim
+#     wav, _ = librosa.effects.trim(wav)
+
+#     return wav.astype(np.float32)
 
 
-def spectrogram2wav(mag):
-    '''# Generate wave file from linear magnitude spectrogram
-    Args:
-      mag: A numpy array of (T, 1+n_fft//2)
-    Returns:
-      wav: A 1-D numpy array.
-    '''
-    # transpose
-    mag = mag.T
+# def griffin_lim(spectrogram):
+#     '''Applies Griffin-Lim's raw.'''
+#     X_best = copy.deepcopy(spectrogram)
+#     for i in range(hp.n_iter):
+#         X_t = invert_spectrogram(X_best)
+#         est = librosa.stft(X_t, hp.n_fft, hp.hop_length, win_length=hp.win_length)
+#         phase = est / np.maximum(1e-8, np.abs(est))
+#         X_best = spectrogram * phase
+#     X_t = invert_spectrogram(X_best)
+#     y = np.real(X_t)
 
-    # de-noramlize
-    mag = (np.clip(mag, 0, 1) * hp.max_db) - hp.max_db + hp.ref_db
-
-    # to amplitude
-    mag = np.power(10.0, mag * 0.05)
-
-    # wav reconstruction
-    wav = griffin_lim(mag ** hp.power)
-
-    # de-preemphasis
-    wav = signal.lfilter([1], [1, -hp.preemphasis], wav)
-
-    # trim
-    wav, _ = librosa.effects.trim(wav)
-
-    return wav.astype(np.float32)
+#     return y
 
 
-def griffin_lim(spectrogram):
-    '''Applies Griffin-Lim's raw.'''
-    X_best = copy.deepcopy(spectrogram)
-    for i in range(hp.n_iter):
-        X_t = invert_spectrogram(X_best)
-        est = librosa.stft(X_t, hp.n_fft, hp.hop_length, win_length=hp.win_length)
-        phase = est / np.maximum(1e-8, np.abs(est))
-        X_best = spectrogram * phase
-    X_t = invert_spectrogram(X_best)
-    y = np.real(X_t)
-
-    return y
-
-
-def invert_spectrogram(spectrogram):
-    '''Applies inverse fft.
-    Args:
-      spectrogram: [1+n_fft//2, t]
-    '''
-    return librosa.istft(spectrogram, hp.hop_length, win_length=hp.win_length, window="hann")
+# def invert_spectrogram(spectrogram):
+#     '''Applies inverse fft.
+#     Args:
+#       spectrogram: [1+n_fft//2, t]
+#     '''
+#     return librosa.istft(spectrogram, hp.hop_length, win_length=hp.win_length, window="hann")
 
 
 def get_spectrograms(fpath):
@@ -80,16 +80,18 @@ def get_spectrograms(fpath):
     y = np.append(y[0], y[1:] - hp.preemphasis * y[:-1])
 
     # stft
-    linear = librosa.stft(y=y,
-                          n_fft=hp.n_fft,
-                          hop_length=hp.hop_length,
-                          win_length=hp.win_length)
+#     linear = librosa.stft(y=y,
+#                           n_fft=hp.n_fft,
+#                           hop_length=hp.hop_length,
+#                           win_length=hp.win_length)
+    g_analysis = {'name': 'gauss', 'M': hp.win_length}
+    linear = ltfatpy.dgtreal(y.astype(np.float64), g_analysis, hp.hop_length, hp.win_length)[0]
 
     # magnitude spectrogram
     mag = np.abs(linear)  # (1+n_fft//2, T)
 
     # mel spectrogram
-    mel_basis = librosa.filters.mel(hp.sr, hp.n_fft, hp.n_mels)  # (n_mels, 1+n_fft//2)
+    mel_basis = librosa.filters.mel(hp.sr, hp.win_length, hp.n_mels)  # (n_mels, 1+n_fft//2)
     mel = np.dot(mel_basis, mag)  # (n_mels, t)
 
     # to decibel
@@ -125,14 +127,15 @@ def preprocess(dataset_path, speech_dataset):
 
     for fname in tqdm(speech_dataset.fnames):
         mel, mag = get_spectrograms(os.path.join(wavs_path, '%s.wav' % fname))
-
-        t = mel.shape[0]
-        # Marginal padding for reduction shape sync.
-        num_paddings = hp.reduction_rate - (t % hp.reduction_rate) if t % hp.reduction_rate != 0 else 0
-        mel = np.pad(mel, [[0, num_paddings], [0, 0]], mode="constant")
-        mag = np.pad(mag, [[0, num_paddings], [0, 0]], mode="constant")
-        # Reduction
-        mel = mel[::hp.reduction_rate, :]
+#         print(mel.shape)
+#         print(mag.shape)
+#         t = mel.shape[0]
+#         # Marginal padding for reduction shape sync.
+#         num_paddings = hp.reduction_rate - (t % hp.reduction_rate) if t % hp.reduction_rate != 0 else 0
+#         mel = np.pad(mel, [[0, num_paddings], [0, 0]], mode="constant")
+#         mag = np.pad(mag, [[0, num_paddings], [0, 0]], mode="constant")
+#         # Reduction
+#         mel = mel[::hp.reduction_rate, :]
 
         np.save(os.path.join(mels_path, '%s.npy' % fname), mel)
         np.save(os.path.join(mags_path, '%s.npy' % fname), mag)

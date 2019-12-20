@@ -2,6 +2,9 @@
 """Download and preprocess datasets. Supported datasets are:
   * English female: LJSpeech (https://keithito.com/LJ-Speech-Dataset/)
   * Mongolian male: MBSpeech (Mongolian Bible)
+  
+This script has been modified by Nathanael Perraudin to use different MEL spectrogram. 
+Please see the function preprocess from audio.py
 """
 __author__ = 'Erdene-Ochir Tuguldur'
 
