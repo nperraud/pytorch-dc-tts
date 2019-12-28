@@ -2,6 +2,11 @@
 """Train the Text2Mel network. See: https://arxiv.org/abs/1710.08969"""
 __author__ = 'Erdene-Ochir Tuguldur'
 
+
+
+import os
+os.environ["CUDA_VISIBLE_DEVICES"]="1"
+
 import sys
 import time
 import argparse

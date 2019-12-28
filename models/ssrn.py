@@ -39,7 +39,7 @@ def BasicBlock(d, k, delta):
 
 
 class SSRN(nn.Module):
-    def __init__(self, c=hp.c, f=hp.n_mels, f_prime=(1 + hp.n_fft // 2)):
+    def __init__(self, c=hp.c, f=hp.n_mels, f_prime=(1 + hp.win_length // 2)):
         """Spectrogram super-resolution network.
         Args:
             c: SSRN dim

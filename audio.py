@@ -127,15 +127,20 @@ def preprocess(dataset_path, speech_dataset):
 
     for fname in tqdm(speech_dataset.fnames):
         mel, mag = get_spectrograms(os.path.join(wavs_path, '%s.wav' % fname))
-#         print(mel.shape)
-#         print(mag.shape)
-#         t = mel.shape[0]
-#         # Marginal padding for reduction shape sync.
-#         num_paddings = hp.reduction_rate - (t % hp.reduction_rate) if t % hp.reduction_rate != 0 else 0
-#         mel = np.pad(mel, [[0, num_paddings], [0, 0]], mode="constant")
-#         mag = np.pad(mag, [[0, num_paddings], [0, 0]], mode="constant")
-#         # Reduction
-#         mel = mel[::hp.reduction_rate, :]
+
+        t = mel.shape[0]
+        # Marginal padding for reduction shape sync.
+        num_paddings = hp.reduction_rate - (t % hp.reduction_rate) if t % hp.reduction_rate != 0 else 0
+        mel = np.pad(mel, [[0, num_paddings], [0, 0]], mode="constant")
+        mag = np.pad(mag, [[0, num_paddings], [0, 0]], mode="constant")
+
+        # Reduction
+        rr = hp.reduction_rate
+#         mel = mel[::rr, :]
+        tmp = np.zeros([mel.shape[0]//rr, mel.shape[1]], np.float32)
+        for i in range(rr):
+            tmp += mel[i::rr, :]
+        mel = tmp/rr
 
         np.save(os.path.join(mels_path, '%s.npy' % fname), mel)
         np.save(os.path.join(mags_path, '%s.npy' % fname), mag)

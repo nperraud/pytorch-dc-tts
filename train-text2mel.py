@@ -7,7 +7,7 @@ __author__ = 'Erdene-Ochir Tuguldur'
 import os
 os.environ["CUDA_VISIBLE_DEVICES"]="1"
 
-
+# 
 
 import sys
 import time
@@ -91,12 +91,13 @@ def train(train_epoch, phase='train'):
         L, S, gates = batch['texts'], batch['mels'], batch['mel_gates']
         S = S.permute(0, 2, 1)  # TODO: because of pre processing
 
+#         S = S.astype(np.float32).double()
+        
         B, N = L.size()  # batch size and text count
         _, n_mels, T = S.size()  # number of melspectrogram bins and time
 
         assert gates.size(0) == B  # TODO: later remove
         assert gates.size(1) == T
-
         S_shifted = torch.cat((S[:, :, 1:], torch.zeros(B, n_mels, 1)), 2)
 
         S.requires_grad = False
