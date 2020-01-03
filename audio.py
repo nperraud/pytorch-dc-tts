@@ -11,55 +11,63 @@ from scipy import signal
 from hparams import HParams as hp
 import ltfatpy
 
-# def spectrogram2wav(mag):
-#     '''# Generate wave file from linear magnitude spectrogram
-#     Args:
-#       mag: A numpy array of (T, 1+n_fft//2)
-#     Returns:
-#       wav: A 1-D numpy array.
-#     '''
-#     # transpose
-#     mag = mag.T
+from src.spectrogramInverter import SpectrogramInverter
 
-#     # de-noramlize
-#     mag = (np.clip(mag, 0, 1) * hp.max_db) - hp.max_db + hp.ref_db
+def spectrogram2wav(mag):
+    '''# Generate wave file from linear magnitude spectrogram
+    Args:
+      mag: A numpy array of (T, 1+n_fft//2)
+    Returns:
+      wav: A 1-D numpy array.
+    '''
+    # transpose
+    mag = mag.T
 
-#     # to amplitude
-#     mag = np.power(10.0, mag * 0.05)
+    # de-noramlize
+    mag = (np.clip(mag, 0, 1) * hp.max_db) - hp.max_db + hp.ref_db
 
-#     # wav reconstruction
+    # to amplitude
+    mag = np.power(10.0, mag* 0.05)
+
+    # wav reconstruction
 #     wav = griffin_lim(mag ** hp.power)
+    length = len(invert_spectrogram(mag))
+    inverter = SpectrogramInverter(hp.win_length, hp.hop_length, length)
+    wav = inverter._invertSpectrogram(mag[:-1]** hp.power);klj
+    # de-preemphasis
+    wav = signal.lfilter([1], [1, -hp.preemphasis], wav)
 
-#     # de-preemphasis
-#     wav = signal.lfilter([1], [1, -hp.preemphasis], wav)
+    # trim
+    wav, _ = librosa.effects.trim(wav)
 
-#     # trim
-#     wav, _ = librosa.effects.trim(wav)
-
-#     return wav.astype(np.float32)
+    return wav.astype(np.float32)
 
 
-# def griffin_lim(spectrogram):
-#     '''Applies Griffin-Lim's raw.'''
-#     X_best = copy.deepcopy(spectrogram)
-#     for i in range(hp.n_iter):
-#         X_t = invert_spectrogram(X_best)
+def griffin_lim(spectrogram):
+    '''Applies Griffin-Lim's raw.'''
+    X_best = copy.deepcopy(spectrogram)
+    for i in range(hp.n_iter):
+        X_t = invert_spectrogram(X_best)
 #         est = librosa.stft(X_t, hp.n_fft, hp.hop_length, win_length=hp.win_length)
-#         phase = est / np.maximum(1e-8, np.abs(est))
-#         X_best = spectrogram * phase
-#     X_t = invert_spectrogram(X_best)
-#     y = np.real(X_t)
+        g_analysis = {'name': 'gauss', 'M': hp.win_length}
+        est = ltfatpy.dgtreal(X_t.astype(np.float64), g_analysis, hp.hop_length, hp.win_length)[0]
+        phase = est / np.maximum(1e-8, np.abs(est))
+        X_best = spectrogram * phase
+    X_t = invert_spectrogram(X_best)
+    y = np.real(X_t)
 
-#     return y
+    return y
 
 
-# def invert_spectrogram(spectrogram):
-#     '''Applies inverse fft.
-#     Args:
-#       spectrogram: [1+n_fft//2, t]
-#     '''
+def invert_spectrogram(spectrogram):
+    '''Applies inverse fft.
+    Args:
+      spectrogram: [1+n_fft//2, t]
+    '''
+    g_analysis = {'name': 'gauss', 'M': hp.win_length}
+    g_synthesis = {'name': ('dual', g_analysis['name']), 'M': g_analysis['M']}
 #     return librosa.istft(spectrogram, hp.hop_length, win_length=hp.win_length, window="hann")
-
+    return ltfatpy.idgtreal(spectrogram.astype(np.complex128), g_synthesis,  hp.hop_length, hp.win_length)[0]
 
 def get_spectrograms(fpath):
     '''Parse the wave file in `fpath` and
