@@ -49,8 +49,7 @@ if args.dataset == 'ljspeech':
 
         # pre process
         print("pre processing...")
-        lj_speech = LJSpeech([])
-        preprocess(dataset_path, lj_speech)
+        preprocess(dataset_path)
 elif args.dataset == 'mbspeech':
     dataset_name = 'MBSpeech-1.0'
     datasets_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'datasets')

@@ -10,7 +10,7 @@ class HParams:
     logdir = "logdir"  # log dir where the checkpoints and tensorboard files are saved
 
     # audio.py options, these values are from https://github.com/Kyubyong/dc_tts/blob/master/hyperparams.py
-    reduction_rate = 4  # melspectrogram reduction rate, don't change because SSRN is using this rate
+    reduction_rate = 2  # melspectrogram reduction rate, don't change because SSRN is using this rate
 #     n_fft = 512 # fft points (samples)
     n_mels = 80  # Number of Mel banks to generate
     power = 1.5  # Exponent for amplifying the predicted magnitude
@@ -21,8 +21,8 @@ class HParams:
     sr = 22050  # Sampling rate
 #     frame_shift = 0.0125  # seconds
 #     frame_length = 0.05  # seconds
-    hop_length = 128 # samples. =276.
-    win_length = 512 # samples. =1102.
+    hop_length = 256 # samples. =276.
+    win_length = 1024 # samples. =1102.
     max_N = 180  # Maximum number of characters.
     max_T = 210  # Maximum number of mel frames.
 
@@ -36,7 +36,7 @@ class HParams:
 
     # Text2Mel network options
     text2mel_lr = 0.005  # learning rate
-    text2mel_max_iteration = 300000  # max train step
+    text2mel_max_iteration = 900000  # max train step
     text2mel_weight_init = 'none'  # 'kaiming', 'xavier' or 'none'
     text2mel_normalization = 'layer'  # 'layer', 'weight' or 'none'
     text2mel_basic_block = 'gated_conv'  # 'highway', 'gated_conv' or 'residual'
