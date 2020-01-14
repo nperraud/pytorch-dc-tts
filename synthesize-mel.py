@@ -44,8 +44,8 @@ SENTENCES = [
 torch.set_grad_enabled(False)
 
 text2mel = Text2Mel(vocab).eval()
-# last_checkpoint_file_name = get_last_checkpoint_file_name(os.path.join(hp.logdir, '%s-text2mel' % args.dataset))
-last_checkpoint_file_name = 'logdir/%s-text2mel/step-130K.pth' % 'ljspeech'
+last_checkpoint_file_name = get_last_checkpoint_file_name(os.path.join(hp.logdir, '%s-text2mel' % 'ljspeech'))
+# last_checkpoint_file_name = 'logdir/%s-text2mel/step-300K.pth' % 'ljspeech'
 if last_checkpoint_file_name:
     print("loading text2mel checkpoint '%s'..." % last_checkpoint_file_name)
     load_checkpoint(last_checkpoint_file_name, text2mel, None)
@@ -79,6 +79,6 @@ for i in range(len(SENTENCES)):
 
     save_to_png('samples-mel/%d-att.png' % (i + 1), A[0, :, :])
     save_to_png('samples-mel/%d-mel.png' % (i + 1), Y[0, :, :])
-    mels.append(Y[0, :, :])
+#     mels.append(Y[0, :, :])
     
-np.savez('samples-mel/mels.npy',mels=mels, SENTENCES=SENTENCES)
+    np.savez('samples-mel/sentence-{}.npz'.format(i+1), mel=Y, sentence=sentences[0])

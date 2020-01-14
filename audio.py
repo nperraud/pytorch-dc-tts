@@ -51,7 +51,8 @@ def make_spectrograms(y, a, M, n_mels, sr=22050):
     # to decibel
     mel = np.log10(np.maximum(1e-5, mel))/2.5+1
     mag = np.log10(np.maximum(1e-5, mag))/2.5+1
-    
+    assert(np.max(mag)<=1)
+    assert(np.min(mag)>=-1)    
 #     # normalize
 #     mel = np.clip((mel - ref_db + max_db) / max_db, 1e-8, 1)
 #     mag = np.clip((mag - ref_db + max_db) / max_db, 1e-8, 1)
@@ -97,8 +98,15 @@ def preprocess(dataset_path):
         # Saving the data: here I transpose it because text2mel works like this.
         # Also text2mel does from 0 to 1...
         # We can invert this later...
-        np.save(os.path.join(mels_path, '%s.npy' % fname), mel.T/2.02+1)
-        np.save(os.path.join(mags_path, '%s.npy' % fname), mag.T/2.02+1) 
+        mel = ((mel.T+1)/4)+0.01
+#         mag = ((mag.T+1)/2.02)+0.01
+        mag = mag.T
+        assert(np.max(mel)<=1)
+        assert(np.min(mel)>=0)
+#         assert(np.max(mag)<=1)
+#         assert(np.min(mag)>=0)
+        np.save(os.path.join(mels_path, '%s.npy' % fname), mel)
+        np.save(os.path.join(mags_path, '%s.npy' % fname), mag) 
 
         
 
