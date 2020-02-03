@@ -39,7 +39,7 @@ def preprocess(dataset_path):
     for fname in tqdm(speech_dataset.fnames):
 #         y = load_signal(os.path.join(wavs_path, '%s.wav' % fname),sr)
             
-        mag, mel = compute_mag_mel_from_path(os.path.join(wavs_path, '%s.wav' % fname))
+        mel, mag = compute_mag_mel_from_path(os.path.join(wavs_path, '%s.wav' % fname))
         
         # Saving the data: here I transpose it because text2mel works like this.
         # Also text2mel does from 0 to 1...
