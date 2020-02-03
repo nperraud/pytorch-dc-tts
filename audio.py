@@ -7,7 +7,7 @@ import numpy as np
 from tqdm import tqdm
 from scipy import signal
 
-from stft4pghi.stft import GaussTF
+from tifresi.pipelines.LJspeech import compute_mag_mel_from_path
 from datasets.lj_speech import LJSpeech
 
 from hparams import HParams as hp
@@ -16,64 +16,16 @@ from hparams import HParams as hp
 # from src.spectrogramInverter import SpectrogramInverter
 
 
-def load_signal(fpath, sr=22050):
-    # Loading sound file
-    y, sr = librosa.load(fpath, sr=sr)
-    # Trimming
-    y, _ = librosa.effects.trim(y)
-    # Preemphasis
-    y = np.append(y[0], y[1:] - 0.97 * y[:-1])
-    y = y[:1024*(len(y)//1024)]
-    return y
-
-
-def make_spectrograms(y, a, M, n_mels, sr=22050):
-    '''Parse the wave file in `fpath` and
-    Returns normalized melspectrogram and linear spectrogram.
-    Args:
-      y  : sound file
-    Returns:
-      mel: A 2d array of shape (T, n_mels) and dtype of float32.
-      mag: A 2d array of shape (T, 1+n_fft/2) and dtype of float32.
-    '''
-    
-    tfsystem = GaussTF(a=a, M=M)
-    linear = tfsystem.dgt(y)
-
-    # magnitude spectrogram
-    mag = np.abs(linear)  # (1+n_fft//2, T)
-    mag = mag/np.max(mag)
-    
-    # mel spectrogram
-    mel_basis = librosa.filters.mel(sr, M, n_mels)  # (n_mels, 1+n_fft//2)
-    mel = np.dot(mel_basis, mag)  # (n_mels, t)
-
-    # to decibel
-    mel = np.log10(np.maximum(1e-5, mel))/2.5+1
-    mag = np.log10(np.maximum(1e-5, mag))/2.5+1
-    assert(np.max(mag)<=1)
-    assert(np.min(mag)>=-1)    
-#     # normalize
-#     mel = np.clip((mel - ref_db + max_db) / max_db, 1e-8, 1)
-#     mag = np.clip((mag - ref_db + max_db) / max_db, 1e-8, 1)
-
-    # Transpose
-    mel = mel.astype(np.float32)  # (T, n_mels)
-    mag = mag.astype(np.float32)  # (T, 1+n_fft//2)
-
-    return mel, mag
-
-
 
 
 
 def preprocess(dataset_path):
     """Preprocess the given dataset."""
-    rr = hp.reduction_rate # 2
-    a = hp.hop_length # 256
-    M = hp.win_length # 1024
-    n_mels = hp.n_mels # 80
-    sr = hp.sr # sr=22050
+#     rr = hp.reduction_rate # 2
+#     a = hp.hop_length # 256
+#     M = hp.win_length # 1024
+#     n_mels = hp.n_mels # 80
+#     sr = hp.sr # sr=22050
     speech_dataset = LJSpeech([])
 
     wavs_path = os.path.join(dataset_path, 'wavs')
@@ -85,20 +37,14 @@ def preprocess(dataset_path):
         os.mkdir(mags_path)
 
     for fname in tqdm(speech_dataset.fnames):
-        y = load_signal(os.path.join(wavs_path, '%s.wav' % fname),sr)
-        mel, mag = make_spectrograms(y, a, M, n_mels, sr=sr)
-        
-        # Reduction
-#         mel = mel[::rr, :]
-        tmp = np.zeros([mel.shape[0], mel.shape[1]//rr], np.float32)
-        for i in range(rr):
-            tmp += mel[:, i::rr]
-        mel = tmp/rr
+#         y = load_signal(os.path.join(wavs_path, '%s.wav' % fname),sr)
+            
+        mag, mel = compute_mag_mel_from_path(os.path.join(wavs_path, '%s.wav' % fname))
         
         # Saving the data: here I transpose it because text2mel works like this.
         # Also text2mel does from 0 to 1...
         # We can invert this later...
-        mel = ((mel.T+1)/4)+0.01
+        mel = (mel.T+0.5)/2
 #         mag = ((mag.T+1)/2.02)+0.01
         mag = mag.T
         assert(np.max(mel)<=1)
