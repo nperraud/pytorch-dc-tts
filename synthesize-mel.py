@@ -45,7 +45,7 @@ torch.set_grad_enabled(False)
 
 text2mel = Text2Mel(vocab).eval()
 last_checkpoint_file_name = get_last_checkpoint_file_name(os.path.join(hp.logdir, '%s-text2mel' % 'ljspeech'))
-last_checkpoint_file_name = 'logdir/%s-text2mel/step-500K.pth' % 'ljspeech'
+# last_checkpoint_file_name = 'logdir/%s-text2mel/step-600K.pth' % 'ljspeech'
 if last_checkpoint_file_name:
     print("loading text2mel checkpoint '%s'..." % last_checkpoint_file_name)
     load_checkpoint(last_checkpoint_file_name, text2mel, None)
